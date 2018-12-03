@@ -8,7 +8,7 @@ use App\Http\Requests;
 
 use Auth;
 
-use DB;
+use App\User;
 
 use Image;
 
@@ -29,7 +29,7 @@ class ProfileController extends Controller
     
     public function update(Request $request){
         $email = $request->email;
-        $users = DB::table('users')->where('cpf', \Auth::user()->cpf)->update(['email' => $email]);
+        $users = User::where('cpf', \Auth::user()->cpf)->update(['email' => $email]);
         return redirect()->route('auth.profile');
     }
     

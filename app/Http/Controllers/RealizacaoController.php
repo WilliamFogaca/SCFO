@@ -8,21 +8,18 @@ use App\Http\Requests;
 
 use App\Realizacao;
 
-use App\Conta;
+use App\SituacaoMensal;
 
-use DB;
+use App\Conta;
 
 class RealizacaoController extends Controller
 {
     public function index() {
         $existe = false;
-        $contas = DB::table('contas')->where('cpf_user', \Auth::user()->cpf)->whereNotIn('codigo', [999])->orderBy('codigo', 'asc')->get();
-        $ContaRealizacoes = DB::table('contas')
-        ->join('realizacoes', function ($join) {
-            $join->on('realizacoes.id_conta', '=', 'contas.id')
-                 ->where('contas.cpf_user', '=', \Auth::user()->cpf);
-        })
-        ->orderBy('codigo', 'asc')->get();
+        $contas = Conta::where('cpf_user', \Auth::user()->cpf)->whereNotIn('codigo', [999])->orderBy('codigo', 'asc')->get();
+        $ContaRealizacoes = Conta::join('realizacoes', 'realizacoes.id_conta', '=', 'contas.id')
+            ->where('contas.cpf_user', '=', \Auth::user()->cpf)
+            ->orderBy('codigo', 'asc')->get();
         
         return view('pages.cadastro.realizacao', ['contas' => $contas, 'existe' => $existe, 'contaRealizacoes' => $ContaRealizacoes]);
     }
@@ -30,17 +27,13 @@ class RealizacaoController extends Controller
     public function relatorio() {
         $naoExiste = true;
         $saldo = 0;
-        $ContaRealizacoes = DB::table('contas')
-        ->join('realizacoes', function ($join) {
-            $join->on('realizacoes.id_conta', '=', 'contas.id')
-                 ->where('contas.cpf_user', '=', \Auth::user()->cpf);
-        })
-        ->orderBy('codigo', 'asc')->get();
+        $ContaRealizacoes = Conta::join('realizacoes', 'realizacoes.id_conta', '=', 'contas.id')
+            ->where('contas.cpf_user', \Auth::user()->cpf)
+            ->orderBy('codigo', 'asc')->get();
         if($ContaRealizacoes != null){
             $naoExiste = false;
             $mesAtual = date('Y-m');
-            $SaldoInicialReal = DB::table('situacao_mensals')
-                ->where('cpf_user', \Auth::user()->cpf)
+            $SaldoInicialReal = SituacaoMensal::where('cpf_user', \Auth::user()->cpf)
                 ->WhereRaw("data::VARCHAR LIKE '%$mesAtual%'")
                 ->pluck('saldo_inicial_real');
             $saldo = $SaldoInicialReal[0];
@@ -53,14 +46,19 @@ class RealizacaoController extends Controller
         $id = $request->id;
         $dados = explode(" ", $request->codigoConta);
         $codigo = $dados[0];
-        $data = $request->dataReal;
+        $data = explode("/", $request->dataReal);
+        //Formatar data para o banco de dados
+        $data = $data[2]."-".$data[1]."-".$data[0];
+        
         $valor = $request->valorReal;
-        $idConta = DB::table('contas')->select('id')
-        ->where([
-            ['codigo', $codigo], 
-            ['cpf_user', \Auth::user()->cpf],
-            ])
-        ->first()->id;
+        //Formatar preço para o banco de dados
+        $valor = str_replace(".","",$valor);
+        $valor = str_replace(",",".",$valor);
+        
+        $idConta = Conta::select('id')
+            ->where('codigo', $codigo)
+            ->where('cpf_user', \Auth::user()->cpf)
+            ->first()->id;
         
         $dadosForm = $request->all();
         $messages = [
@@ -75,13 +73,11 @@ class RealizacaoController extends Controller
         }
         
         if ($id == null) {
-            $RealizacaoExiste = DB::table('contas')
-            ->join('realizacoes', function ($join) {
-                $join->on('realizacoes.id_conta', '=', 'contas.id')
-                     ->where('contas.cpf_user', '=', \Auth::user()->cpf);
-            })->where('codigo', $codigo)->get();
+            $RealizacaoExiste = Conta::join('realizacoes', 'realizacoes.id_conta', '=', 'contas.id')
+                ->where('contas.cpf_user', \Auth::user()->cpf)
+                ->where('codigo', $codigo)->count();
             
-            if($RealizacaoExiste == null){
+            if($RealizacaoExiste == 0){
                 $realizacao = Realizacao::create([
                     'data_real' => $data,
                     'valor_real' => $valor,
@@ -89,13 +85,17 @@ class RealizacaoController extends Controller
                 ]);
                 
                 if($codigo == 1){
-                    $situacaoMensal = DB::table('situacao_mensals')->where('cpf_user', \Auth::user()->cpf)
-                    ->update(['saldo_inicial_real' => $valor]);
+                    $situacaoMensal = SituacaoMensal::where('cpf_user', \Auth::user()->cpf)
+                        ->update(['saldo_inicial_real' => $valor]);
                 }
             }else{
                 $existe = true;
-                $contas = DB::table('contas')->where('cpf_user', \Auth::user()->cpf)->whereNotIn('codigo', [999])->orderBy('codigo', 'asc')->get();
-                return view('pages.cadastro.realizacao', ['contas' => $contas],['existe' => $existe]);
+                $contas = Conta::where('cpf_user', \Auth::user()->cpf)->whereNotIn('codigo', [999])->orderBy('codigo', 'asc')->get();
+                $ContaRealizacoes = Conta::join('realizacoes', 'realizacoes.id_conta', '=', 'contas.id')
+                    ->where('contas.cpf_user', \Auth::user()->cpf)
+                    ->orderBy('codigo', 'asc')->get();
+                
+                return view('pages.cadastro.realizacao', ['contas' => $contas, 'existe' => $existe, 'contaRealizacoes' => $ContaRealizacoes]);
             }
             
         }else{
@@ -111,22 +111,19 @@ class RealizacaoController extends Controller
     
     public function remove($id) {
         
-        $realizacao = DB::table('contas')
-            ->join('realizacoes', function ($join) {
-                $join->on('realizacoes.id_conta', '=', 'contas.id')
-                     ->where('contas.cpf_user', '=', \Auth::user()->cpf);
-            })->where('realizacoes.id', $id)->pluck('codigo');
+        $realizacao = Conta::join('realizacoes', 'realizacoes.id_conta', '=', 'contas.id')
+            ->where('contas.cpf_user', \Auth::user()->cpf)
+            ->where('realizacoes.id', $id)->pluck('codigo');
         $codigo = $realizacao[0];
         
         if($codigo == 1){
-            $situacaoMensal = DB::table('situacao_mensals')->where('cpf_user', \Auth::user()->cpf)
-            ->update(['saldo_inicial_real' => null]);
+            $situacaoMensal = SituacaoMensal::where('cpf_user', \Auth::user()->cpf)
+                ->update(['saldo_inicial_real' => null]);
         }
         
-        $realizacao = DB::table('realizacoes')->where('id', $id);
-        if($realizacao->delete()){
-                return redirect()->route('cadastro.realizacao');
-        }
+        Realizacao::destroy($id);
+        return redirect()->route('cadastro.realizacao');
+        
     }
     
     public function findOne(Request $request) {

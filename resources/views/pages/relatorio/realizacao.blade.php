@@ -50,7 +50,7 @@
                                           @endif
                                           </td>
                                           @empty
-                                          <td class="text-center" colspan="5">Nenhuma realização cadastrada</td>
+                                          <td class="text-center" colspan="6">Nenhuma realização cadastrada</td>
                                         </tr>
                                       @endforelse
                                     </tbody>

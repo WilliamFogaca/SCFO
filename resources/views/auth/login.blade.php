@@ -27,7 +27,7 @@
           
             <div class="form-group{{ $errors->has('cpf') ? ' has-error' : '' }}">
             <label for="cpf" class="col-md-12 control-label">CPF</label>
-            <input id="cpf" type="text" class="form-control" name="cpf" value="{{ old('cpf') }}" placeholder="Ex.: 000.000.000-00" onkeypress="return SomenteNumero(event)" maxlength="11">
+            <input id="cpf" type="text" class="form-control" name="cpf" value="{{ old('cpf') }}" placeholder="Ex.: 000.000.000-00" maxlength="11">
 
           </div>
           <div class="form-group{{ $errors->has('password') ? ' has-error' : '' }}">

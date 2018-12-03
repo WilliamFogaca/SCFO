@@ -58,7 +58,7 @@
                         
                         @if($existe)
                             <div class="alert alert-danger">
-                                <strong>Já foi cadastrado uma realização para esse código</strong>
+                                <strong>Já foi cadastrado uma realização para essa conta</strong>
                             </div>
                         @endif
                         

@@ -6,14 +6,13 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 
-use DB;
+use App\Conta;
 
 class ComparacaoController extends Controller
 {
     public function relatorio(){
         $naoExiste = true;
-        $previsaoRealizacoes = DB::table('contas')
-            ->join('previsoes', 'previsoes.id_conta', '=', 'contas.id')
+        $previsaoRealizacoes = Conta::join('previsoes', 'previsoes.id_conta', '=', 'contas.id')
             ->join('realizacoes', 'realizacoes.id_conta', '=', 'contas.id')
             ->where('contas.cpf_user', \Auth::user()->cpf)->get();
             

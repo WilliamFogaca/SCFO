@@ -18,14 +18,17 @@ use DB;
 class ContaController extends Controller
 {
     public function index() {
+        $nomeUsuario = \Auth::user()->nome;
+        $nomeSeparado = explode(" ", $nomeUsuario);
+        $nome = $nomeSeparado[0]." ".$nomeSeparado[1];
         $existe = false;
-        $contas = DB::table('contas')->where('cpf_user', \Auth::user()->cpf)->orderBy('codigo', 'asc')->get();
-        return view('pages.cadastro.conta', ['existe' => $existe], ['contas' => $contas]);
+        $contas = Conta::where('cpf_user', \Auth::user()->cpf)->orderBy('codigo', 'asc')->get();
+        return view('pages.cadastro.conta', ['existe' => $existe, 'nome' => $nome], ['contas' => $contas]);
         
     }
     
     public function relatorio() {
-        $contas = DB::table('contas')->where('cpf_user', \Auth::user()->cpf)->orderBy('codigo', 'asc')->get();
+        $contas = Conta::where('cpf_user', \Auth::user()->cpf)->orderBy('codigo', 'asc')->get();
         return view('pages.relatorio.conta', ['contas' => $contas]);
     }
     
@@ -34,8 +37,8 @@ class ContaController extends Controller
         $nomeSeparado = explode(" ", $nomeUsuario);
         $nome = $nomeSeparado[0]." ".$nomeSeparado[1];
         
-        $contas = DB::table('contas')->where('cpf_user', \Auth::user()->cpf)->whereIn('codigo', [1,999])->get();
-        if($contas == null){
+        $contas = Conta::where('cpf_user', \Auth::user()->cpf)->whereIn('codigo', [1, 999])->count();
+        if($contas == 0){
             $saldoInicial = Conta::create([
                 'codigo' => 1,
                 'titulo' => 'Saldo inicial',
@@ -83,11 +86,8 @@ class ContaController extends Controller
         }
         
         if ($id == null) {
-            $codigoConta = DB::table('contas')->where([
-                ['cpf_user', \Auth::user()->cpf],
-                ['codigo', $codigo],
-            ])->get();
-            if($codigoConta==null){
+            $codigoConta = Conta::where('cpf_user', \Auth::user()->cpf)->where('codigo', $codigo)->count();
+            if($codigoConta==0){
                 $conta = Conta::create([
                     'codigo' => $codigo,
                     'titulo' => $titulo,
@@ -97,7 +97,7 @@ class ContaController extends Controller
                 ]);
             }else{
                 $existe = true;
-                $contas = DB::table('contas')->where('cpf_user', \Auth::user()->cpf)->orderBy('codigo', 'asc')->get();
+                $contas = Conta::where('cpf_user', \Auth::user()->cpf)->orderBy('codigo', 'asc')->get();
                 return view('pages.cadastro.conta', ['existe' => $existe, 'contas' => $contas]);
             }
             
@@ -115,12 +115,8 @@ class ContaController extends Controller
     }
     
     public function remove($id) {
-        
-        $delete = DB::table('contas')->where('id', $id)->delete();
-        
-        if($delete){
-                return redirect()->route('cadastro.conta');
-        }
+        Conta::destroy($id);
+        return redirect()->route('cadastro.conta');
     }
     
     public function findOne(Request $request) {

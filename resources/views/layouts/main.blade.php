@@ -26,7 +26,7 @@
             <a href="{{ url('/') }}" class="navbar-brand ">SCFO</a>
             
             <li class="dropdown">
-                     <a href="#" class="btn btn-scfo dropdown-toggle" data-toggle="dropdown"><img src="/uploads/avatars/{{ Auth::user()->avatar }}" class="mr-2" style="width:32px; height:32px; top:3px; left:10px; border-radius:50%">Olá, {{ $nome }}<b class="caret"></b></a>
+                     <a href="#" class="btn btn-scfo dropdown-toggle" data-toggle="dropdown"><img src="/uploads/avatars/{{ Auth::user()->avatar }}" class="mr-2" style="width:32px; height:32px; top:3px; left:10px; border-radius:50%">Olá, {{ \Auth::user()->nome }}<b class="caret"></b></a>
                      <ul class="dropdown-menu dropdown-menu-right border border-dark rounded" style="padding: 15px;min-width: 250px; ">
                         <li>
                            <div class="row">
